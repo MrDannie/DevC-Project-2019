@@ -1,0 +1,43 @@
+{
+  "name": "projects",
+  "version": "1.0.0",
+  "description": "devc-project-2019",
+  "main": "index.js",
+  "scripts": {
+    "server": "nodemon server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "(https://github.com/MrDannie/DevC-Project-2019)"
+  },
+  "keywords": [
+    "React"
+  ],
+  "author": "Agbogun Daniel O.",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^5.0.0",
+    "eslint": "^6.6.0",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.16.0",
+    "eslint-plugin-react-hooks": "^1.7.0",
+    "nodemon": "^1.19.4"
+  },
+  "dependencies": {
+    "bcrypt": "^3.0.6",
+    "body-parser": "^1.19.0",
+    "cloudinary": "^1.17.0",
+    "config": "^3.2.4",
+    "connect-multiparty": "^2.2.0",
+    "cookie-parser": "^1.4.4",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.1.6-alpha.6",
+    "fs": "0.0.1-security",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.24.0",
+    "pg": "^7.12.1",
+    "uuid": "^3.3.3"
+  }
+}

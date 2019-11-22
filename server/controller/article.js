@@ -1,4 +1,3 @@
-const db = require('../queries');
 const moment = require('moment');
 const Pool = require('pg').Pool
   const pool = new Pool ({
@@ -13,15 +12,24 @@ const Pool = require('pg').Pool
 
 exports.createArticle = (req, res) => {
  const {title, article} = req.body;
-  pool.query('INSERT INTO articles (owner_id, title, article, createdtime) VALUES ($1, $2, $3, $4)', [req.user.id, title, article, moment(new Date())], (error, results) =>{
+  pool.query('INSERT INTO articles (owner_id, title, article, createdtime) VALUES ($1, $2, $3, $4) returning *', [req.user.id, title, article, moment(new Date())], (error, results) =>{
 
    if(error){
-    res.status(400).json({
-     error: error
+    return res.status(400).json({
+     status: error,
+     error: "Article could not be created"
     })
    }
-   res.status(201).json({
-    message: "Article created successfully!!"
+  return res.status(201).json({
+    
+      status : "success",
+      data : {
+      message :  "Aritcle Succesfully Created",
+      articleId :  results.rows[0].id,
+      createdOn :  results.rows[0].createdtime,
+      title :  results.rows[0].title,
+      }
+      
    })
   })
 }
@@ -29,67 +37,82 @@ exports.createArticle = (req, res) => {
 
 
 exports.editArticle = (req, res) => {
-  const id = req.params.article_id
+  const id = req.params.article_id;
   const { title, article } = req.body;
 
   pool.query("UPDATE articles SET title = $1, article = $2 WHERE id = $3 AND owner_id = $4 returning *", [title, article, id, req.user.id], (error, results) =>{
-    if(results.rows[0]){
-     res.status(400).json({
+    if(!results.rows[0]){
+    return res.status(400).json({
       error: error
      })
     }
-    res.json({
-     message: "Article Updated successfully !!"
+   return res.status(201).json({
+      
+        status : "success",
+        data : {
+        message :  "Article Successfully created",
+        title :  results.rows[0].title,
+        article :  results.rows[0].article,
+        }
+        
     })
    })
 }
 
 exports.deleteArticle = (req, res) => {
-  const id = req.params.article_id
-    pool.query('DELETE FROM articles WHERE id = $1 AND owner_id = $2 returning *', [id, req.user.id], (error, results) => {
+  const articleId = req.params.article_id
+  pool.query('SELECT * FROM articles WHERE id = $1', [articleId], (error, result) =>{
+    if(result.rows[0].owner_id !== req.user.id){
+      return res.status(403).json({
+         status: "error",
+         error: "You are cannot delete this article"
+      })
+    }
+  })
+    pool.query('DELETE FROM articles WHERE id = $1 AND owner_id = $2 returning *', [articleId, req.user.id], (error, results) => {
       if(!results.rows[0]){
-        res.status(400).json({
+       return res.status(404).json({
           message: "Article is not Found"
         })
       }
-      res.status(200).json({
-        message: "article deleted successfully!!"
-      })
+      return res.status(202).json({
+        status : "success",
+        data :   {
+        message: "Article deleted sucessfully"
+        }
+      })  
     })
 }
 
-exports.postArticleComment = (req, res) => {
-  if (!req.body.comment){
-    return res.status(400).json({message: "comment has to be provided"});
-  }
- const articleId = req.params.article_id;
- const {comment} = req.body;
 
- const sqlString = 'INSERT INTO articlecomment (article_id, comment, createdTime) VALUES ($1, $2, $3)'
- pool.query(sqlString, [articleId, comment, moment(new Date())], (error, results)=> {
-   if(error){
-     return res.status(401).json({
-       message: 'Unable to post comment'
-     })
-   }else{
-     return res.status(201).json({
-       status:"success",
-       data: {
-         message: "comment successfully created",
-   
-       }
-     })
-   }
- })
-}
 
-exports.getArticle = (req, res) => {
+exports.getSingleArticle = (req, res) => {
  const articleId = req.params.article_id;
+
+ 
 
   pool.query('SELECT * FROM articles WHERE id = $1', [articleId], (error, results) => {
-    if (error){
-      return res.status(400).json({message: "article could not be retrieved"})
+    if (!results.rows[0]){
+      return res.status(400).json({
+        status: "errror",
+        error: "This article DO NOT Exist"
+      })
     }
       return res.status(200).json(results.rows);
      })
+}
+
+exports.getAllArticle = (req, res) => {
+  pool.query('SELECT * FROM articles ORDER BY createdtime DESC', (error, results) =>{
+    if(error){
+      return res.status(400).json({
+        status: "error",
+        error: "Could Not retrieve article"
+      })
+    }
+    return res.status(200).json({
+      status: 'Success',
+      data: results.rows
+    });
+  })
 }

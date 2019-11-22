@@ -1,6 +1,7 @@
 // const db = require('../queries');
-const helper = require('../middleware/auth');
+const helper = require('../middleware/handler');
 const uuidv4 = require('uuid/v4');
+const bcrypt = require('bcrypt');
 
 const Pool = require('pg').Pool
   const pool = new Pool ({
@@ -24,7 +25,7 @@ exports.getUsers = (request, response) => {
 }
 
 //endpoint to create account//
- exports.createAccount = (req, res) => {
+ exports.createAccount = async (req, res) => {
  if (!req.body.email || !req.body.password){
    return res.status(400).json({ message: "Some required value are missing"})
  }
@@ -32,19 +33,30 @@ exports.getUsers = (request, response) => {
    return res.status(400).json({message: "enter a valid email address"})
  }
 
- const hashedPassword = helper.hashPassword(req.body.password);
- 
+ const {
+  firstName, lastName,
+  email, password, gender,
+  jobRole, department,
+  address
+  } = req.body
+
+ pool.query('SELECT * FROM users WHERE email = $1', [email], (error, result)=>{
+   if(error){
+     return res.status(400).json({
+       status: "error",
+       error: "User already exists"
+     })
+   }
+ })
+
+ const hashedPassword = await bcrypt.hash(password, 10);
+
  const queryString = `INSERT INTO users (id, first_name,
                       last_name, email, pass_word, gender,
                      job_role, department, address) VALUES
                     ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *`;
 
-const {
-   firstName, lastName,
-   email, gender,
-   jobRole, department,
-   address
-   } = req.body
+
   
   
  const values = [uuidv4(), firstName, lastName, email, hashedPassword , gender, jobRole, department, address];
@@ -52,12 +64,23 @@ const {
   pool.query(queryString, values, (error, results)=>{
     
     if(error){
-     console.log('i love u');
-     res.status(400).send(error);
+     return res.status(400).json({
+      status: "error",
+      error: error
+     });
     }else{
      
       const token = helper.generateToken(results.rows[0].id);
-      return res.status(201).send({token: token});
+      return res.status(201).json({
+        
+          status : "status",
+          data : {
+          message: "User account created successfully",
+          token :  token,
+          userId:  results.rows[0].id,
+          }
+          
+      });
     }
    }
   
@@ -66,28 +89,32 @@ const {
 
  //endpoint to SignIn//
 
- exports.signIn = (req, res) => {
-  const {email} = req.body;
+ exports.signIn =  (req, res) => {
+  const {email, password} = req.body;
   const queryString = "SELECT * FROM users WHERE email = $1";
-  pool.query(queryString, [email], (error, results) => {
-    console.log(error || results.rows[0])
+
+
+  pool.query(queryString, [email], async (error, results) => {
+    // console.log(error || results.rows[0])
    if (!results.rows[0]){
-    return res.status(400).json({message: "incorrect email address"});
+    return res.status(400).json({message: "incorrect email address or password"});
    }
-   const dbpassword = results.pass_word;
-
-   if(!helper.comparePassword(dbpassword, req.body.password)){
-
-    return res.status(400).json({message: "invalid password"})
-
+   const dbpassword = results.rows[0].pass_word;
+   const validResult = await bcrypt.compare(password, dbpassword)
+   if(!validResult){
+    return res.status(400).json({message: "invalid email or password"})
+    
    } else {
-
+    
     const token = helper.generateToken(results.rows[0].id);
-    return res.status(201).send({token: token});
-
+    return res.status(201).json({
+      status: 'success',
+      data: {
+        token: token,
+        userId: results.rows[0].id
+      }
+    });
    }
-
-   
   })
     
 }

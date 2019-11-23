@@ -31,12 +31,14 @@ app.use(bodyParser.json());
 const articleRoute = require('./routes/article.routes');
 const gifRoute = require('./routes/gif.routes');
 const userRoute = require('./routes/user.routes');
+const feedRoute = require('./routes/feed.routes');
 
 
  
 app.use('/api', userRoute);
 app.use('/api', articleRoute);
 app.use('/api', gifRoute);
+app.use('/api', feedRoute);
 
 
 

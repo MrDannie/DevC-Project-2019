@@ -29,7 +29,7 @@
     "bcrypt": "^3.0.7",
     "body-parser": "^1.19.0",
     "cloudinary": "^1.17.0",
-    "config": "^3.2.4",
+    "config": "^3.3.8",
     "connect-multiparty": "^2.2.0",
     "cookie-parser": "^1.4.4",
     "dotenv": "^8.2.0",
